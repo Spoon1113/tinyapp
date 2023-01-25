@@ -22,10 +22,17 @@
         </p>
       </div>  
       <div class="card-footer text-muted"></div>
+<<<<<<< HEAD
         <h3 class="card-title text-muted">Edit</h3>
           <form method="POST" actions="/urls/<%= id %>/update">
             <label for="newURL" class="text">New URL:</label>
             <input type="text" id="newURL" value="<%= longURL %>">
+=======
+        <h3 class="card-title">Edit</h3>
+          <form method="POST" actions="/urls/<%= id %>">
+            <label for="longURL" class="text">New URL:</label>
+            <input type="text" id="longURL">
+>>>>>>> feature/cookies
             <button type="submit" class="btn btn-primary">Submit</button>
           </form>
     </div>
