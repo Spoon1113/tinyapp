@@ -61,8 +61,11 @@ app.get("/urls", (req, res) => {
   };
   res.render("urls_index", templateVars);
 });
-
+// NEW URL
 app.get("/urls/new", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    return res.redirect("/login")
+  }
   const userID = req.cookies["user_id"];
   const user = users[userID]
   const templateVars = { user }
@@ -71,6 +74,10 @@ app.get("/urls/new", (req, res) => {
 
 app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
+
+  if (!req.cookies["user_id"]) {
+    return res.status(400).send("You need to be logged in to be able to do that!")
+  }
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${shortURL}`)
@@ -83,6 +90,9 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
+  if (!urlDatabase[req.params.id]) {
+    return res.status(400).send("The URL you are looking for cannot be found.")
+  }
   const templateVars = {
     id: req.params.id,
     longURL: urlDatabase[req.params.id],
@@ -104,6 +114,9 @@ app.post("/urls/:id", (req, res) => {
 });
 //GET Login
 app.get("/login", (req, res) => {
+  if (req.cookies["user_id"]) {
+    return res.redirect("/urls");
+  }
   const templateVars = {
     user: users[req.cookies["user_id"]]
   };
@@ -132,6 +145,9 @@ app.post("/logout", (req, res) => {
 });
 //GET Register
 app.get('/register', (req, res) => {
+  if (req.cookies["user_id"]) {
+    return res.redirect("/urls");
+  }
   const templateVars = {
     user: users[req.cookies["user_id"]]
   }
@@ -157,7 +173,7 @@ app.post('/register', (req, res) => {
   users[id] = newUser;
   console.log("users", users);
   res.cookie('userID', newUser.id);
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
