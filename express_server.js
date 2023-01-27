@@ -1,11 +1,13 @@
+// Libraries & Dependancies
 const express = require("express");
 const app = express();
 const PORT = 8080;
 const cookieSession = require("cookie-session");
 const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
-
+const { getUserByEmail, generateRandomString, urlsForUser } = require("./helpers");
 app.set("view engine", "ejs");
+//Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieSession({
   name: 'session',
@@ -39,40 +41,12 @@ const users = {
   },
 };
 // generate unique shortURLID
-const generateRandomString = () => {
-  let string = "";
-  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const length = 6;
-  for (let i = 0; i < length; i++) {
-    let randomNum = Math.floor(Math.random() * chars.length);
-    string += chars.substring(randomNum, randomNum + 1);
-  }
-  return string;
-};
-// returns the URLs where the userID is equal to the id of the currently logged-in user.
-const urlsForUser = (user) => {
-  let urls = {};
-  for (const url in urlDatabase) {
-    if (urlDatabase[url].userID === user) {
-      urls[url] = urlDatabase[url].longURL;
-    }
-  }
-  return urls;
-};
 
-//Email look up function
-const getUserByEmail = (email) => {
-  for (const id in users) {
-    if (users[id].email === email) {
-      return users[id];
-    }
-  }
-  return false;
-};
+
 
 // Homepage
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.redirect("/login");
 });
 
 app.get("/urls", (req, res) => {
@@ -84,7 +58,7 @@ app.get("/urls", (req, res) => {
     user: user
   };
   if (!user) {
-    return res.status(403).send("Please login or register an account!");
+    return res.redirect("/login");
   }
   res.render("urls_index", templateVars);
 });
@@ -99,7 +73,7 @@ app.get("/urls/new", (req, res) => {
     urls: urlDatabase,
     user: user,
   };
-  
+
   res.render("urls_new", templateVars);
 });
 
@@ -118,12 +92,11 @@ app.post("/urls", (req, res) => {
 
 app.get("/u/:id", (req, res) => {
   const id = req.params.id
-  const longURL = urlDatabase[req.params.id].longURL;
+  const longURL = urlDatabase[id].longURL;
   if (urlDatabase[id] === undefined) {
     return res.status(400).send("ID could not be found.");
-  } else {
-    res.redirect(longURL)
   }
+  res.redirect(longURL);
 });
 
 app.get("/urls/:id", (req, res) => {
@@ -176,7 +149,7 @@ app.post("/urls/:id", (req, res) => {
   if (!urlDatabase[id]) {
     return res.status(404).send("This page cannot be found.")
   }
-  urlDatabase[id].longURL =  req.body.longURL;
+  urlDatabase[id].longURL = req.body.longURL;
   res.redirect("/urls");
 });
 //GET Login
@@ -197,7 +170,7 @@ app.post("/login", (req, res) => {
   }
   if (!bcrypt.compareSync(password, user.password)) {
     return res.status(403).send("Incorrect Password!")
-    
+
   }
   req.session.user_id = user.id;
   return res.redirect("/urls");
