@@ -18,41 +18,21 @@ app.use(cookieSession({
 }))
 app.use(morgan('dev'));
 
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW",
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW",
-  },
-};
-const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur"
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk"
-  },
-};
-// generate unique shortURLID
-
-
+const urlDatabase = {};
+const users = {};
 
 // Homepage
 app.get("/", (req, res) => {
-  res.redirect("/login");
+  if (!req.session.user_id) {
+    return res.redirect("/login");
+  }
+  res.redirect("/urls");
 });
 
 app.get("/urls", (req, res) => {
   const userID = req.session.user_id;
-  const user = users[userID]
-  const urls = urlsForUser(userID)
+  const user = users[userID];
+  const urls = urlsForUser(userID, urlDatabase);
   const templateVars = {
     urls: urls,
     user: user
@@ -81,12 +61,12 @@ app.post("/urls", (req, res) => {
   if (!req.session.user_id) {
     return res.status(400).send("You need to be logged in to be able to do that!")
   }
-  const shortURL = generateRandomString();
-  urlDatabase[shortURL] = {
+  const id = generateRandomString();
+  urlDatabase[id] = {
     longURL: req.body.longURL,
     userID: req.session.user_id
   };
-  res.redirect(`/urls/${shortURL}`)
+  res.redirect(`/urls/${id}`)
 });
 
 
@@ -139,8 +119,8 @@ app.post("/urls/:id/delete", (req, res) => {
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
   const userID = req.session.user_id;
-  const user = urlsForUser(userID);
-  if (!req.session.user_id) {
+  const user = urlsForUser(userID, urlDatabase);
+  if (!userID) {
     return res.status(403).send("Please login to have access to this.");
   }
   if (!user[id]) {
@@ -152,6 +132,7 @@ app.post("/urls/:id", (req, res) => {
   urlDatabase[id].longURL = req.body.longURL;
   res.redirect("/urls");
 });
+
 //GET Login
 app.get("/login", (req, res) => {
   const templateVars = {
@@ -160,13 +141,15 @@ app.get("/login", (req, res) => {
   res.render("urls_login", templateVars);
 });
 
+
+
 //POST Login
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const user = getUserByEmail(email);
-  if (!email) {
-    return res.status(403).send("This email was not found!");
+  const user = getUserByEmail(email, users);
+  if (email === "" || password === "") {
+    return res.status(403).send("Enter vailid e-mail/password");
   }
   if (!bcrypt.compareSync(password, user.password)) {
     return res.status(403).send("Incorrect Password!")
@@ -223,4 +206,3 @@ app.get("/urls.json", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
