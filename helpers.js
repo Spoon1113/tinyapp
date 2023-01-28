@@ -1,4 +1,4 @@
-const urlsForUser = (user) => {
+const urlsForUser = (user, urlDatabase) => {
   let urls = {};
   for (const url in urlDatabase) {
     if (urlDatabase[url].userID === user) {
@@ -15,7 +15,7 @@ const getUserByEmail = (email, database) => {
       return database[id];
     }
   }
-  return null;
+  return undefined;
 };
 const generateRandomString = () => {
   let string = "";
