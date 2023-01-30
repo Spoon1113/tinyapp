@@ -73,7 +73,7 @@ app.post("/urls", (req, res) => {
 app.get("/u/:id", (req, res) => {
   const id = req.params.id
   const longURL = urlDatabase[id].longURL;
-  if (urlDatabase[id] === undefined) {
+  if (!urlDatabase[id]) {
     return res.status(400).send("ID could not be found.");
   }
   res.redirect(longURL);
@@ -190,8 +190,8 @@ app.post('/register', (req, res) => {
     password: hashedPassword
   };
   users[userID] = newUser;
-  req.session.user_id = users.id;
-  res.redirect("/login");
+  req.session.user_id = newUser.id;
+  res.redirect("/urls");
 });
 
 app.get("/hello", (req, res) => {
